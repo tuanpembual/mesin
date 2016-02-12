@@ -1,0 +1,86 @@
+---
+- hosts: servers
+  user: root
+
+  tasks:
+    - name: set locale
+      shell: export LC="en_US.UTF-8" && export LANGUAGE="en_US.UTF-8" && locale >> /etc/environment
+ 
+    - name: Update apt cache
+      apt: update-cache=yes
+
+    - name: Set MySQL root password before installing
+      debconf: name='mysql-server' question='mysql-server/root_password' value='root' vtype='password'
+
+    - name: Confirm MySQL root password before installing
+      debconf: name='mysql-server' question='mysql-server/root_password_again' value='root' vtype='password'
+
+    - name: Deletes anonymous MySQL server user for localhost
+      mysql_user: user="" state="absent" login_password="root" login_user="root"
+    
+    - name: Secures the MySQL root user
+      mysql_user: user="root" password="root" host="localhost" login_password="root" login_user="root"
+  
+    - name: Removes the MySQL test database
+      mysql_db: db=test state=absent login_password="root" login_user=root
+
+    - name: Install system packages
+      apt: pkg={{ item }}
+      with_items:
+        - git
+        - nginx
+        - gunicorn
+        - python-mysqldb
+        - python-pip
+        - python-dev
+        - mysql-server
+        - mysql-client
+
+    - name: Create directory for app
+      file: path=/srv/django_hello state=directory
+
+    - name: make sure mysql server is running
+      service: name=mysql state=started
+
+    - name: create database
+      mysql_db: name=hello state=present login_password="root" login_user="root"
+
+    - name: create database user
+      mysql_user: name=hello password=ubahsaya priv=*.*:ALL state=present login_password="root" login_user="root"
+
+    - name: Clone/pull project repo
+      git: repo=https://github.com/tuanpembual/django-hello-world.git dest=/srv/django_hello accept_hostkey=yes
+      notify: restart gunicorn
+
+    - name: install python packages
+      pip: requirements=/srv/django_hello/requirements.txt
+      notify: restart gunicorn
+
+    - name: copy nginx config
+      template: src=files/nginx.j2 dest=/etc/nginx/sites-enabled/django_hello.conf
+      notify: restart nginx
+
+    - name: django migrate
+      django_manage: command=migrate app_path=/srv/django_hello pythonpath=/srv/django_hello/hello/apps
+
+    - name: django collectstatic
+      django_manage: command=collectstatic app_path=/srv/django_hello pythonpath=/srv/django_hello/hello/apps
+
+    - name: copy gunicorn config
+      template: src=files/gunicorn.j2 dest=/etc/init/gunicorn.conf
+      notify: restart gunicorn
+
+    - name: make sure gunicorn server is running
+      service: name=gunicorn state=started enabled=yes
+
+    - name: make sure nginx server is running
+      service: name=nginx state=started enabled=yes
+
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+
+    - name: restart gunicorn
+      service: name=gunicorn state=restarted
+
+# vim:ft=ansible:

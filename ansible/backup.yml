@@ -1,0 +1,21 @@
+---
+- hosts: servers
+  user: root
+
+  tasks:
+    - name: Create backups directory
+      file: path=/root/backups state=directory
+
+    - name: copy config nginx
+      shell: cp /etc/nginx/sites-enabled/django_hello.conf /root/backups/django_hello.conf 
+
+    - name: compres app folder
+      shell: tar -cvzf /root/backups/backup-$(date +%Y-%m-%d).tar.gz /srv/django_hello
+
+    - name: mysql dump
+      mysql_db: state=dump name=hello target=/root/backups/hello.sql
+    
+    - name: rotate backups. keep last 7 day.
+      shell: find /root/backups/*.tar.gz -ctime +7 -delete
+
+# vim:ft=ansible:

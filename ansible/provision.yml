@@ -1,0 +1,69 @@
+---
+- hosts: servers
+  user: root
+
+  tasks:
+    - name: set locale
+      shell: export LC="en_US.UTF-8" && export LANGUAGU="en_US.UTF-8" && locale >> /etc/environment
+ 
+    - name: Update apt cache
+      apt: update-cache=yes
+
+    - name: Install system packages
+      apt: pkg={{ item }}
+      with_items:
+        - git
+        - nginx
+        - gunicorn
+        - python-mysqldb
+        - python-pip
+        - python-dev
+
+  #   - name: Create directory for app
+  #     file: path=/srv/django_hello state=directory
+
+  #   - name: make sure postgresql server is running
+  #     service: name=postgresql state=started
+
+  #   - name: create database
+  #     mysql_db: name=hello state=present
+
+  #   - name: create database user
+  #     mysql_user: name=hello password=ubahsaya priv=*.*:ALL state=present
+
+  #   - name: Clone/pull project repo
+  #     git: repo=https://github.com/tuanpembual/django-hello-world.git dest=/srv/django_hello accept_hostkey=yes
+  #     notify: restart gunicorn
+
+  #   - name: install python packages
+  #     pip: requirements=/srv/django_hello/requirements.txt
+  #     notify: restart gunicorn
+
+  #   - name: copy nginx config
+  #     template: src=files/nginx.j2 dest=/etc/nginx/sites-enabled/django_hello.conf
+  #     notify: restart nginx
+
+  #   - name: django migrate
+  #     django_manage: command=migrate app_path=/srv/django_hello pythonpath=/srv/django_hello/hello/apps
+
+  #   - name: django collectstatic
+  #     django_manage: command=collectstatic app_path=/srv/django_hello pythonpath=/srv/django_hello/hello/apps
+
+  #   - name: copy gunicorn config
+  #     template: src=files/gunicorn.j2 dest=/etc/init/gunicorn.conf
+  #     notify: restart gunicorn
+
+  #   - name: make sure gunicorn server is running
+  #     service: name=gunicorn state=started enabled=yes
+
+  #   - name: make sure nginx server is running
+  #     service: name=nginx state=started enabled=yes
+
+  # handlers:
+  #   - name: restart nginx
+  #     service: name=nginx state=restarted
+
+  #   - name: restart gunicorn
+  #     service: name=gunicorn state=restarted
+
+# vim:ft=ansible:

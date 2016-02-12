@@ -11,5 +11,5 @@ $ cd ansible
 setup ip server in file hosts
 
 ```  
-$ ansible-playbook -i hosts provision.yaml
+$ ansible-playbook -i hosts provision.yml
 ```
